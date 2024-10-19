@@ -12,6 +12,8 @@ from django.db import models
 from User.Utils.config import UserManager
 from nanoid import generate
 
+from User.Utils.tools import send_verification_email_otp
+
 @deconstructible
 class UsernameValidator(validators.RegexValidator):
     regex = r"^[a-zA-Z0-9_]{3,30}$"
@@ -117,3 +119,28 @@ class Address(models.Model):
         verbose_name = 'Address'
         verbose_name_plural = 'Addresses'
         unique_together = ['user', 'name']
+
+
+class EmailVerifications(models.Model):
+    id = models.CharField(max_length=100, unique=True, editable=False, primary_key=True)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='email_verifications', null=True, blank=True)
+    email = models.EmailField(max_length=254)
+    otp = models.CharField(max_length=6)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.id = generate(size=28)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.email
+    
+    def send_verification_email_otp(self):
+        return send_verification_email_otp(self.email, self.otp)
+    
+    class Meta:
+        db_table = 'email_verification'
+        verbose_name = 'Email Verification'
+        verbose_name_plural = 'Email Verifications'

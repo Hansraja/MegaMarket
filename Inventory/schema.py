@@ -2,8 +2,14 @@ import graphene
 from graphene_django import DjangoConnectionField
 from graphene_django.types import DjangoObjectType
 
+from Admin.models import Brand
 from Api import relay
+from Common.exceptions import InvalidImageException, InvalidModelIdException, UnAuthorizedException
+from Common.models import Image
+from Common.tools import ImageHandler
 from Inventory.models import Item, Category, Order, OrderItem, Inventory, ItemVariation, ItemReview, Tag
+from Inventory.types import NewItemInput
+from Vendor.models import Vendor
 
 class ItemObject(DjangoObjectType):
     class Meta:
@@ -97,6 +103,73 @@ class TagObject(DjangoObjectType):
         interface= (relay.Node, )
         use_connection = True
 
+'''********** Mutations **********'''
+
+class CreateItem(graphene.Mutation):
+    class Input:
+        input = NewItemInput(required=True)
+
+    item = graphene.Field(ItemObject)
+    success = graphene.Boolean()
+
+    def mutate(self, info, input: NewItemInput):
+        if not info.context.user.is_authenticated:
+            raise UnAuthorizedException()
+        elif not info.context.user.type.lower() == 'vendor':
+            raise UnAuthorizedException()
+        
+        try: vendor = Vendor.objects.get(key=input.vendor)
+        except Vendor.DoesNotExist: raise InvalidModelIdException(model="Vendor")
+        
+        try: category = Category.objects.get(id=input.category)
+        except Category.DoesNotExist: raise InvalidModelIdException(model="Category")
+
+        brand = None
+        if input.brand:
+            try: brand = Brand.objects.get(id=input.brand)
+            except Brand.DoesNotExist: raise InvalidModelIdException(model="Brand")
+
+        if not vendor or not category: raise InvalidModelIdException(model="Vendor or Category")
+
+        image = ImageHandler(input.image).auto_image()
+
+        if not image or not isinstance(image, Image): raise InvalidImageException()
+
+        item = Item(
+            sku=input.sku,
+            name=input.name,
+            teaser=input.teaser,
+            description=input.description,
+            bullet_points=input.bullet_points,
+            image=image,
+            status=input.status,
+            price=input.price,
+            delivery_time=input.delivery_time,
+            shipping_cost=input.shipping_cost,
+            can_return=input.can_return,
+            return_time=input.return_time,
+            return_policy=input.return_policy,
+            category=category,
+            vendor=vendor,
+            brand=brand,
+            extra_fields=input.extra_fields
+        )
+
+        for tag in input.tags:
+            tag = Tag.objects.get_or_create(name=tag)
+            item.tags.add(tag)
+
+        for image in input.images:
+            image = ImageHandler(image).auto_image()
+            if image and isinstance(image, Image):
+                item.images.add(image)
+
+        item.save()
+        return CreateItem(item=item, success=True)
+
+
+'''********** Query **********'''
+
 class Query(graphene.ObjectType):
     items = DjangoConnectionField(ItemObject)
     categories = DjangoConnectionField(CategoryObject)
@@ -116,4 +189,4 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    pass
+    create_item = CreateItem.Field()
