@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Image</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .uploaded-image {
+            margin-top: 20px;
+        }
+        .uploaded-image h2 {
+            color: #28a745;
+        }
+        .uploaded-image p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Image</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="image">Select image:</label>
+            <input type="file" name="image" id="image" required>
+            <button type="submit">Upload</button>
+        </form>
+        {% if url %}
+            <div class="uploaded-image">
+                <h2>Uploaded Image</h2>
+                <p>Public ID: {{ public_id }}</p>
+                <p>URL: <a href="{{ url }}" target="_blank">{{ url }}</a></p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
