@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from email import message
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from nanoid import generate
 from Common.tools import ImageHandler
 from User.Utils.tools import generate_otp
@@ -123,6 +123,7 @@ class UserLogin(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, identifier, password):
+        print(root, info)
         isEmail = '@' in identifier
         user = User.objects.filter(email=identifier).first() if isEmail else User.objects.filter(username=identifier).first()
         if not user:
@@ -130,6 +131,7 @@ class UserLogin(graphene.Mutation):
         if not user.check_password(password):
             return UserLogin(success=False, message='Invalid credentials')
         user = authenticate(email=user.email, password=password)
+        login(info.context, user)
         return UserLogin(user=user, success=True, session_id=info.context.session.session_key, message="You have been logged in")
 
 

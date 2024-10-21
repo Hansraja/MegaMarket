@@ -3,7 +3,7 @@ from Common.types import ImageInput
 
 
 class CustomerInput(graphene.InputObjectType):
-    username = graphene.String(required=True)
+    username = graphene.String()
     first_name = graphene.String(required=True)
     last_name = graphene.String(required=True)
     email = graphene.String(required=True)
