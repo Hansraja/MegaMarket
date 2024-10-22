@@ -3,7 +3,7 @@ import graphene
 from Api import relay
 from Common.tools import ImageHandler
 from User.models import User
-from Vendor.types import NewVendorInput
+from Vendor.types import NewVendorInput, UpdateVendorInput
 from .models import Vendor
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
@@ -55,6 +55,40 @@ class NewVendor(graphene.Mutation):
             website=input.store.website
         )
         return NewVendor(vendor=vendor, success=True)
+    
+
+class UpdateVendor(graphene.Mutation):
+    class Input:
+        input = UpdateVendorInput(required=True)
+
+    vendor = graphene.Field(VendorObject)
+    message = graphene.String()
+    success = graphene.Boolean()
+
+    @classmethod
+    def mutate(cls, root, info, input: UpdateVendorInput | None = None):
+        user = info.context.user
+        if not user.is_authenticated or not user.type == 'vendor':
+            return UpdateVendor(message="Authentication credentials were not provided or user is not a vendor", success=False)
+        vendor = user.vendor
+        if input.store_name:
+            vendor.name = input.store_name
+        if input.store_description:
+            vendor.description = input.store_description
+        if input.store_logo:
+            vendor.logo = ImageHandler(input.store_logo).auto_image()
+        if input.store_banner:
+            vendor.banner = ImageHandler(input.store_banner).auto_image()
+        if input.store_address:
+            vendor.address = input.store_address
+        if input.store_phone:
+            vendor.phone = input.store_phone
+        if input.store_email:
+            vendor.email = input.store_email
+        if input.store_website:
+            vendor.website = input.store_website
+        vendor.save()
+        return UpdateVendor(vendor=vendor, success=True)
 
 
 class Query:
@@ -64,3 +98,4 @@ class Query:
 
 class Mutation:
     new_vendor = NewVendor.Field()
+    update_vendor = UpdateVendor.Field()

@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login
 from nanoid import generate
 from Common.tools import ImageHandler
 from User.Utils.tools import generate_otp
-from User.types import CustomerInput
+from User.types import BaseUpdateProfileInput, CustomerInput
 from .models import EmailVerifications, User
 
 class UserObject(DjangoObjectType):
@@ -123,7 +123,6 @@ class UserLogin(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, identifier, password):
-        print(root, info)
         isEmail = '@' in identifier
         user = User.objects.filter(email=identifier).first() if isEmail else User.objects.filter(username=identifier).first()
         if not user:
@@ -134,6 +133,36 @@ class UserLogin(graphene.Mutation):
         login(info.context, user)
         return UserLogin(user=user, success=True, session_id=info.context.session.session_key, message="You have been logged in")
 
+class UpdateUserProfile(graphene.Mutation):
+
+    class Input:
+        input = BaseUpdateProfileInput(required=True)
+
+    profile = graphene.Field(UserObject)
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    @classmethod
+    def mutate(cls, root, info, input):
+        user = info.context.user
+        if not user.is_authenticated or not user.is_active:
+            return UpdateUserProfile(success=False, message="User is not authenticated or not active")
+        
+        if input.first_name:
+            user.first_name = input.first_name
+        if input.last_name:
+            user.last_name = input.last_name
+        if input.username:
+            user.username = input.username
+        if input.dob:
+            user.dob = input.dob
+        if input.sex:
+            user.sex = input.sex
+        if input.image:
+            user.image = ImageHandler(input.image).auto_image()
+        
+        user.save()
+        return UpdateUserProfile(profile=user, success=True, message="Profile updated successfully")
 
 class Query(graphene.ObjectType):
     users = graphene.List(UserObject)
@@ -151,6 +180,7 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     new_customer = NewCustomer.Field()
     create_new_customer = CreateNewCustomer.Field()
+    update_profile = UpdateUserProfile.Field()
     send_verification_email = SendVerificationEmail.Field()
     verify_email = VerifyEmail.Field()
     user_login = UserLogin.Field()

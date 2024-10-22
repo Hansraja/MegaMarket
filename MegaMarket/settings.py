@@ -164,6 +164,7 @@ CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTP_ONLY = True
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -171,7 +172,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     "https://ecommerce.collegejaankaar.in",
-    "https://vercel.com",
+    "https://megamart-alpha.vercel.app",
     "https://www.collegejaankaar.in",
 ]
 
