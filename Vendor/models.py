@@ -19,11 +19,16 @@ class Vendor(models.Model):
     updated_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        if self.user.type.lower() != 'vendor':
+            raise ValueError('User type must be vendor')
         if not self.pk:
             self.key = generate(size=24)
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.store_name
-
-
+    
+    class Meta:
+        db_table = 'vendor'
+        verbose_name = 'Vendor'
+        verbose_name_plural = 'Vendors'

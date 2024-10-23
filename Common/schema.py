@@ -5,6 +5,7 @@ from Admin.models import Banner, BannerGroup
 from Api import relay
 from Common.models import Image
 from Common.tools import ImageUrlBuilder
+from Common.types import BannerButtonObject
 
 class ImageCropEnum(graphene.Enum):
     SCALE = 'scale'
@@ -19,7 +20,8 @@ class ImageObject(DjangoObjectType):
         height=graphene.Int(),
         crop=graphene.Argument(ImageCropEnum),
         quality=graphene.Int(),
-        format=graphene.String()
+        format=graphene.String(),
+        required=True
     )
 
     class Meta:
@@ -49,6 +51,8 @@ class ImageObject(DjangoObjectType):
         )
     
 class BannerObject(DjangoObjectType):
+    button = graphene.Field(BannerButtonObject)
+
     class Meta:
         model = Banner
         fields = '__all__'
@@ -84,10 +88,15 @@ class BannerGroupObject(DjangoObjectType):
 
 class Query(graphene.ObjectType):
     banners = DjangoFilterConnectionField(BannerObject)
-    banner = relay.Node.Field(BannerObject)
+    banner = graphene.Field(BannerObject, id=graphene.String())
     banner_groups = DjangoFilterConnectionField(BannerGroupObject)
     banner_group = graphene.Field(BannerGroupObject, id=graphene.String(), location=graphene.String())
 
+    def resolve_banner(self, info, id=None):
+        if id:
+            return Banner.objects.get(id=id)
+        return None
+    
     def resolve_banner_group(self, info, id=None, location=None):
         if id:
             return BannerGroup.objects.get(id=id)

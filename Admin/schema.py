@@ -1,10 +1,30 @@
 from time import timezone
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from Admin.models import Banner, BannerGroup
+from Api import relay
 from Common.schema import BannerGroupObject, BannerObject
 from Common.tools import ImageHandler
-from Admin.types import BannerGroupInput, BannerGroupUpdateInput, BannerInput, BannerUpdateInput
+from Admin.types import BannerGroupInput, BannerGroupUpdateInput, BannerInput, BannerUpdateInput, PageInput, PageUpdateInput
+from .models import Page
+
+
+class PageObject(DjangoObjectType):
+    class Meta:
+        model = Page
+        fields = '__all__'
+        filter_fields = {
+            'slug': ['exact', 'icontains'],
+            'title': ['exact', 'icontains'],
+            'description': ['exact', 'icontains'],
+            'is_last': ['exact'],
+            'created_at': ['exact', 'icontains'],
+            'updated_at': ['exact', 'icontains'],
+        }
+        interfaces = (relay.Node, )
+        use_connection = True
+
 
 class CreateBanner(graphene.Mutation):
     class Input:
@@ -119,11 +139,69 @@ class UpdateBannerGroup(graphene.Mutation):
             banner_group.save()
             return UpdateBannerGroup(banner_group=banner_group, success=True, message='Banner group updated successfully.')
 
+class CreatePage(graphene.Mutation):
+    class Input:
+        input = PageInput(required=True)
+
+    page = graphene.Field(PageObject)
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    @classmethod
+    def mutate(cls, root, info, input):
+        user = info.context.user
+        if not user.is_authenticated or not user.is_admin:
+            raise Exception('You are not authorized to perform this action.')
+        parent = input.pop('parent')
+        if parent:
+            parent = Page.objects.get(id=parent)
+            if not parent:
+                raise Exception('Parent page does not exist.')
+        image = ImageHandler(input.pop('image')).auto_image()
+        page = Page.objects.create(**input, image=image, parent=parent)
+        return CreatePage(page=page, success=True, message='Page created successfully.')
+    
+class UpdatePage(graphene.Mutation):
+    class Input:
+        id = graphene.String(required=True)
+        input = PageUpdateInput(required=True)
+    
+    page = graphene.Field(PageObject)
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    @classmethod
+    def mutate(cls, root, info, id, input):
+        user = info.context.user
+        if not user.is_authenticated or not user.is_admin:
+            raise Exception('You are not authorized to perform this action.')
+        page = Page.objects.get(id=id)
+        if not page:
+            raise Exception(f'Page with ID {id} does not exist.')
+        parent = input.pop('parent')
+        if parent:
+            parent = Page.objects.get(id=parent)
+            if not parent:
+                raise Exception('Parent page does not exist.')
+        if 'image' in input:
+            image = ImageHandler(input.pop('image')).auto_image()
+            page.image = image
+        for key, value in input.items():
+            if value:
+                setattr(page, key, value)
+        page.parent = parent
+        page.save()
+        return UpdatePage(page=page, success=True, message='Page updated successfully.')
+
 class Query(graphene.ObjectType):
-    pass
+    pages = DjangoFilterConnectionField(PageObject)
+    page = relay.Node.Field(PageObject)
 
 class Mutation(graphene.ObjectType):
     create_banner = CreateBanner.Field()
     update_banner = UpdateBanner.Field()
     create_banner_group = CreateBannerGroup.Field()
     update_banner_group = UpdateBannerGroup.Field()
+
+    create_page = CreatePage.Field()
+    update_page = UpdatePage.Field()

@@ -26,23 +26,50 @@ class ItemExtraField(graphene.InputObjectType):
     type = graphene.String(required=True)
     data = graphene.List(ItemExtraFieldData, required=True)
 
-class NewItemInput(graphene.InputObjectType):
-    sku = graphene.String(required=True)
-    name = graphene.String(required=True)
+
+class BaseItemInput(graphene.InputObjectType):
     teaser = graphene.String()
-    description = graphene.String(required=True)
     bullet_points = graphene.List(graphene.String)
-    image = ImageInput(required=True)
     images = graphene.List(ImageInput)
     tags = graphene.List(graphene.String)
     status = graphene.Field(ItemStatusEnum)
-    price = graphene.Float(required=True)
     delivery_time = graphene.Int()
     shipping_cost = graphene.Float()
     can_return = graphene.Boolean()
     return_time = graphene.Int()
     return_policy = graphene.String()
-    category = graphene.String(required=True)
-    vendor =  graphene.String(required=True)
     brand = graphene.String()
     extra_fields = graphene.List(ItemExtraField)
+
+class NewItemInput(BaseItemInput):
+    sku = graphene.String(required=True)
+    name = graphene.String(required=True)
+    description = graphene.String(required=True)
+    image = ImageInput(required=True)
+    price = graphene.Float(required=True)
+    category = graphene.String(required=True)
+    vendor =  graphene.String(required=True)
+
+
+class UpdateItemInput(NewItemInput):
+    sku = graphene.String()
+    name = graphene.String()
+    description = graphene.String()
+    image = ImageInput()
+    price = graphene.Float()
+    category = graphene.String()
+
+
+class CategoryInput(graphene.InputObjectType):
+    name = graphene.String(required=True)
+    description = graphene.String()
+    image = ImageInput(required=True)
+    parent = graphene.String()
+    priority = graphene.Int()
+
+class CategoryUpdateInput(graphene.InputObjectType):
+    name = graphene.String()
+    description = graphene.String()
+    image = ImageInput()
+    parent = graphene.String()
+    priority = graphene.Int()

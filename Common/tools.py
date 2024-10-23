@@ -55,6 +55,10 @@ class ImageHandler():
             if self.delete_image(image):
                 return None
             return None
+        elif self.image_input.action == 'none':
+            if self.image_input.id:
+                return Image.objects.get(pk=self.image_input.id)
+            return None
         else:
             return None
         

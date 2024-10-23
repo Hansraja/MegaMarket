@@ -75,3 +75,30 @@ class BannerGroup(models.Model):
         db_table = 'banner_group'
         verbose_name = 'Banner Group'
         verbose_name_plural = 'Banner Groups'
+
+
+class Page(models.Model):
+    id = models.CharField(max_length=100, unique=True, editable=False, primary_key=True)
+    slug = models.CharField(max_length=200)
+    title = models.CharField(max_length=500)
+    description = models.TextField()
+    image = models.ForeignKey('Common.Image', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+    is_last = models.BooleanField(default=True)
+    content = models.JSONField()
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = generate(size=40)
+        super(Page, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        db_table = 'page'
+        verbose_name = 'Page'
+        verbose_name_plural = 'Pages'
+        unique_together = ['slug', 'is_last']

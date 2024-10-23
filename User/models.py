@@ -68,6 +68,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = _('user')
         verbose_name_plural = _('users')
 
+    @property
+    def is_vendor(self):
+        return self.type.lower() == 'vendor'
+
+    @property
+    def is_admin(self):
+        return self.is_superuser or self.type.lower() == 'admin'
+
     def __str__(self):
         return self.username
     
@@ -144,3 +152,56 @@ class EmailVerifications(models.Model):
         db_table = 'email_verification'
         verbose_name = 'Email Verification'
         verbose_name_plural = 'Email Verifications'
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey('Cart', on_delete=models.CASCADE, related_name='items')
+    item = models.ForeignKey('Inventory.Item', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.item.name} in cart {self.cart.id}"
+    
+    class Meta:
+        db_table = 'cart_item'
+        verbose_name = 'Cart Item'
+        verbose_name_plural = 'Cart Items'
+
+class Cart(models.Model):
+    id = models.CharField(max_length=100, unique=True, editable=False, primary_key=True)
+    user = models.OneToOneField('User', on_delete=models.CASCADE, related_name='cart', auto_created=True)
+    _items = models.ManyToManyField('Inventory.Item', through='CartItem', related_name='cart_items')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.id = generate(size=28)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        verbose_name = 'Cart'
+        verbose_name_plural = 'Carts'
+
+class Wishlist(models.Model):
+    id = models.CharField(max_length=100, unique=True, editable=False, primary_key=True)
+    user = models.OneToOneField('User', on_delete=models.CASCADE, related_name='wishlist', auto_created=True)
+    items = models.ManyToManyField('Inventory.Item', related_name='wishlist_items')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.id = generate(size=28)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.user.username
+    
+    class Meta:
+        db_table = 'wishlist'
+        verbose_name = 'Wishlist'
+        verbose_name_plural = 'Wishlists'
