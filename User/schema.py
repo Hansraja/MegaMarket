@@ -143,7 +143,7 @@ class UpdateUserProfile(graphene.Mutation):
     message = graphene.String()
 
     @classmethod
-    def mutate(cls, root, info, input):
+    def mutate(cls, root, info, input: BaseUpdateProfileInput | None = None):
         user = info.context.user
         if not user.is_authenticated or not user.is_active:
             return UpdateUserProfile(success=False, message="User is not authenticated or not active")

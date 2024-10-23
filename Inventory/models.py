@@ -11,10 +11,10 @@ class Inventory(models.Model):
     restock_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.id = generate(size=28)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -29,7 +29,7 @@ class Item(models.Model):
     key = models.CharField(max_length=100, unique=True, editable=False)
     sku = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=250)
-    teaser = models.CharField(max_length=500)
+    teaser = models.CharField(max_length=500, null=True, blank=True)
     description = models.TextField()
     bullet_points = models.JSONField()
     image = models.ForeignKey('Common.Image', on_delete=models.CASCADE)
@@ -43,11 +43,11 @@ class Item(models.Model):
     ], default='available')
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_time = models.IntegerField()
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    can_return = models.BooleanField(default=True)
-    return_time = models.IntegerField()
-    return_policy = models.TextField()
+    delivery_time = models.IntegerField(null=True, blank=True)
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    can_return = models.BooleanField(default=True, null=True, blank=True)
+    return_time = models.IntegerField(null=True, blank=True)
+    return_policy = models.TextField(null=True, blank=True)
     
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
     vendor = models.ForeignKey('Vendor.Vendor', on_delete=models.CASCADE)
@@ -60,10 +60,10 @@ class Item(models.Model):
     
     extra_fields = models.JSONField(null=True, blank=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.key = generate(size=24)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return self.name
@@ -84,10 +84,10 @@ class ItemVariation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.id = generate(size=28)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -108,10 +108,10 @@ class Category(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     priority = models.IntegerField(default=0)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.id = generate(size=28)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -128,10 +128,10 @@ class Tag(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.id = generate(size=28)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -152,10 +152,10 @@ class ItemReview(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.id = generate(size=28)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -178,18 +178,18 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ], default='pending')
     total = models.DecimalField(max_digits=10, decimal_places=2)
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=10)  
-    delivery_time = models.IntegerField()
+    delivery_time = models.IntegerField( null=True, blank=True)
     shipping_address = models.ForeignKey('User.Address', on_delete=models.CASCADE, related_name='shipping_address')
     billing_address = models.ForeignKey('User.Address', on_delete=models.CASCADE, related_name='billing_address')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if not self.pk:
             self.key = generate(size=40)
-        return super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Order by {self.user.get_full_name()} for {self.total} {self.currency}'

@@ -8,10 +8,13 @@ from Common.exceptions import InvalidImageException, InvalidModelIdException, Un
 from Common.models import Image
 from Common.tools import ImageHandler
 from Inventory.models import Item, Category, Order, OrderItem, Inventory, ItemVariation, ItemReview, Tag
-from Inventory.types import NewItemInput
+from Inventory.types import ItemExtraFieldObject, NewItemInput
 from Vendor.models import Vendor
 
 class ItemObject(DjangoObjectType):
+    bullet_points = graphene.List(graphene.String)
+    extra_fields = graphene.List(ItemExtraFieldObject)
+
     class Meta:
         model = Item
         exclude = ('created_at', 'updated_at')
@@ -111,6 +114,7 @@ class CreateItem(graphene.Mutation):
 
     item = graphene.Field(ItemObject)
     success = graphene.Boolean()
+    message = graphene.String()
 
     def mutate(self, info, input: NewItemInput):
         if not info.context.user.is_authenticated:
@@ -165,7 +169,7 @@ class CreateItem(graphene.Mutation):
                 item.images.add(image)
 
         item.save()
-        return CreateItem(item=item, success=True)
+        return CreateItem(item=item, success=True, message="Item created successfully")
 
 
 '''********** Query **********'''
